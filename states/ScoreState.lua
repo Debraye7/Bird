@@ -15,6 +15,15 @@ ScoreState = Class{__includes = BaseState}
     from the play state so we know what to render to the State.
 ]]
 function ScoreState:enter(params)
+    if params.score < 1 then
+      self.medal = Medal('lost')
+    elseif params.score < 2 then
+      self.medal = Medal('bronze')
+    elseif params.score < 3 then
+      self.medal = Medal('silver')
+    else
+      self.medal = Medal('gold')
+    end
     self.score = params.score
 end
 
@@ -31,7 +40,8 @@ function ScoreState:render()
     love.graphics.printf('Oof! You lost!', 0, 64, VIRTUAL_WIDTH, 'center')
 
     love.graphics.setFont(mediumFont)
-    love.graphics.printf('Score: ' .. tostring(self.score), 0, 100, VIRTUAL_WIDTH, 'center')
+    self.medal:render(VIRTUAL_WIDTH/2 - self.medal.width/2, VIRTUAL_HEIGHT/2 - self.medal.height/2)
+    love.graphics.printf('Score: ' .. tostring(self.score), 0, 110, VIRTUAL_WIDTH, 'center')
 
-    love.graphics.printf('Press Enter to Play Again!', 0, 160, VIRTUAL_WIDTH, 'center')
+    love.graphics.printf('Press Enter to Play Again!', 0, 170, VIRTUAL_WIDTH, 'center')
 end
