@@ -17,50 +17,72 @@ PIPE_HEIGHT = 288
 BIRD_WIDTH = 38
 BIRD_HEIGHT = 24
 
+
+
 function PlayState:init()
     self.bird = Bird()
     self.pipePairs = {}
     self.timer = 0
     self.score = 0
-
     -- initialize our last recorded Y value for a gap placement to base other gaps off of
     self.lastY = -PIPE_HEIGHT + math.random(80) + 20
+    self.bronze = Medal('bronze')
+    self.silver = Medal('silver')
+    self.gold = Medal('gold')
+    self.pause = Pause()
+end
+
+function SecondsRandom() 
+  return 1 + math.random(1, 6)
 end
 
 function PlayState:update(dt)
     -- update timer for pipe spawning
-    self.timer = self.timer + dt
+    if pause == false then
+        self.timer = self.timer + dt
+        -- random timer for pipe spawning
+        SECONDS = math.random(2, 10);
 
-    -- spawn a new pipe pair every second and a half
-    if self.timer > 2 then
-        -- modify the last Y coordinate we placed so pipe gaps aren't too far apart
-        -- no higher than 10 pixels below the top edge of the screen,
-        -- and no lower than a gap length (90 pixels) from the bottom
-        local y = math.max(-PIPE_HEIGHT + 10, 
-            math.min(self.lastY + math.random(-20, 20), VIRTUAL_HEIGHT - 90 - PIPE_HEIGHT))
-        self.lastY = y
 
-        -- add a new pipe pair at the end of the screen at our new Y
-        table.insert(self.pipePairs, PipePair(y))
+        -- spawn a new pipe pair every second and a half
+        if self.timer > SECONDS then
+            -- modify the last Y coordinate we placed so pipe gaps aren't too far apart
+            -- no higher than 10 pixels below the top edge of the screen,
+            -- and no lower than a gap length (90 pixels) from the bottom
+            local y = math.max(-PIPE_HEIGHT + 10, 
+                math.min(self.lastY + math.random(-20, 20), VIRTUAL_HEIGHT - 90 - PIPE_HEIGHT))
+            self.lastY = y
 
-        -- reset timer
-        self.timer = 0
-    end
+            -- add a new pipe pair at the end of the screen at our new Y
+            table.insert(self.pipePairs, PipePair(y))
 
-    -- for every pair of pipes..
-    for k, pair in pairs(self.pipePairs) do
-        -- score a point if the pipe has gone past the bird to the left all the way
-        -- be sure to ignore it if it's already been scored
-        if not pair.scored then
-            if pair.x + PIPE_WIDTH < self.bird.x then
-                self.score = self.score + 1
-                pair.scored = true
-                sounds['score']:play()
-            end
+            -- reset timer
+            self.timer = 0
         end
 
-        -- update position of pair
-        pair:update(dt)
+        -- for every pair of pipes..
+        for k, pair in pairs(self.pipePairs) do
+            -- score a point if the pipe has gone past the bird to the left all the way
+            -- be sure to ignore it if it's already been scored
+            if not pair.scored then
+                if pair.x + PIPE_WIDTH < self.bird.x then
+                    self.score = self.score + 1
+                    pair.scored = true
+                    sounds['score']:play()
+                end
+            end
+
+            -- update position of pair
+            pair:update(dt)
+        end
+    end
+
+    if self.score > 0 then
+      self.medal = Medal('bronze')
+    elseif self.score > 1 then
+      self.medal = Medal('silver')
+    elseif self.score > 2 then
+      self.medal = Medal('gold')
     end
 
     -- we need this second loop, rather than deleting in the previous loop, because
@@ -108,8 +130,33 @@ function PlayState:render()
 
     love.graphics.setFont(flappyFont)
     love.graphics.print('Score: ' .. tostring(self.score), 8, 8)
+    love.graphics.setFont(mediumFont)
+    self.bronze:render(8, 40)
+    love.graphics.print('1', 50, 40 + self.bronze.height/3)
+    self.silver:render(8, 80)
+    love.graphics.print('2', 50, 80 + self.silver.height/3)
+    self.gold:render(8, 120)
+    love.graphics.print('3', 50, 120 + self.gold.height/3)
 
     self.bird:render()
+    if pause == true then
+      self.pause:render(VIRTUAL_WIDTH/2 - self.pause.width/2, VIRTUAL_HEIGHT/2 - self.pause.height/2)
+    end
+
+    function love.keypressed(key)
+      -- add to our table of keys pressed this frame
+      love.keyboard.keysPressed[key] = true
+      if key == 'p' then
+        sounds['pause']:play()
+        if pause == false then
+          sounds['music']:pause()
+          pause = true
+        elseif pause == true then
+          sounds['music']:play()
+          pause = false
+        end
+      end
+    end
 end
 
 --[[
