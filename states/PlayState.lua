@@ -32,10 +32,6 @@ function PlayState:init()
     self.pause = Pause()
 end
 
-function SecondsRandom() 
-  return 1 + math.random(1, 6)
-end
-
 function PlayState:update(dt)
     -- update timer for pipe spawning
     if pause == false then
